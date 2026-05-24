@@ -1,51 +1,49 @@
-import api from '../config/axios';
+
+import axios from '../config/axios';
 
 export const CatalogoService = {
   // ==========================================
   // CATEGORÍAS
   // ==========================================
-  async getCategorias() {
-    const { data } = await api.get('/catalogo/categorias');
-    return data;
+  getCategorias: async () => {
+    const res = await axios.get('/catalogo/categorias');
+    return res.data;
   },
-  async crearCategoria(payload: any) {
-    const { data } = await api.post('/catalogo/categorias', payload);
-    return data;
+  
+  crearCategoria: async (payload: any) => {
+    // Como usamos el axios configurado, el token JWT viaja automáticamente acá
+    const res = await axios.post('/catalogo/categorias', payload);
+    return res.data;
   },
-  async actualizarCategoria(id: number, payload: any) {
-    const { data } = await api.patch(`/catalogo/categorias/${id}`, payload);
-    return data;
-  },
-
-  // ==========================================
-  // INGREDIENTES Y DEPÓSITO
-  // ==========================================
-  async getIngredientes() {
-    const { data } = await api.get('/catalogo/ingredientes');
-    return data;
-  },
-  async crearIngrediente(payload: any) {
-    const { data } = await api.post('/catalogo/ingredientes', payload);
-    return data;
-  },
-  async actualizarIngrediente(id: number, payload: any) {
-    const { data } = await api.patch(`/catalogo/ingredientes/${id}`, payload);
-    return data;
+  
+  actualizarCategoria: async (id: number, payload: any) => {
+    const res = await axios.put(`/catalogo/categorias/${id}`, payload);
+    return res.data;
   },
 
   // ==========================================
-  // PRODUCTOS (RECETAS Y ESCANDALLO)
+  // PRODUCTOS (RECETAS / ESCANDALLOS)
   // ==========================================
-  async getProductos() {
-    const { data } = await api.get('/catalogo/productos');
-    return data;
+  getProductos: async () => {
+    const res = await axios.get('/catalogo/productos');
+    return res.data;
   },
-  async crearProducto(payload: any) {
-    const { data } = await api.post('/catalogo/productos', payload);
-    return data;
+  
+  crearProducto: async (payload: any) => {
+    const res = await axios.post('/catalogo/productos', payload);
+    return res.data;
   },
-  async actualizarProducto(id: number, payload: any) {
-    const { data } = await api.patch(`/catalogo/productos/${id}`, payload);
-    return data;
+  
+  actualizarProducto: async (id: number, payload: any) => {
+    const res = await axios.put(`/catalogo/productos/${id}`, payload);
+    return res.data;
+  },
+
+  // ==========================================
+  // INGREDIENTES
+  // ==========================================
+  getIngredientes: async () => {
+    const res = await axios.get('/catalogo/ingredientes');
+    return res.data;
   }
 };
