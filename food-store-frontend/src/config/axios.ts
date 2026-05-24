@@ -6,6 +6,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Necesario para que el navegador envíe y reciba la cookie httpOnly del login
+  withCredentials: true,
 });
 
 // INTERCEPTOR DE PETICIONES (Agrega el Token directo del LocalStorage)
@@ -44,27 +46,18 @@ api.interceptors.request.use(
   }
 );
 
-// INTERCEPTOR DE RESPUESTAS (Maneja si el token expiró )
-api.interceptors.request.use(
-  (config) => {
-    // Si la URL es login, no hacemos nada
-    if (config.url?.includes('/login')) return config;
-
-    const authStore = localStorage.getItem('food-store-auth');
-    let token = null;
-
-    if (authStore) {
-      const parsed = JSON.parse(authStore);
-      token = parsed.state?.token;
+// INTERCEPTOR DE RESPUESTAS (Maneja token expirado → redirige al login)
+api.interceptors.response.use(
+  (response) => response, // Respuestas 2xx pasan directo
+  (error) => {
+    if (error.response?.status === 401) {
+      console.warn('⛔ [AXIOS] Token expirado o inválido. Cerrando sesión...');
+      // Limpiamos el store de autenticación
+      useAuthStore.getState().logout();
+      // Redirigimos al login sin recargar toda la SPA
+      window.location.href = '/login';
     }
-
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-     // console.log("✅ Token inyectado correctamente");
-    } else {
-      //console.warn("❌ Petición sin token en:", config.url);
-    }
-    return config;
+    return Promise.reject(error);
   }
 );
 

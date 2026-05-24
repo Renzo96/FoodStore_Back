@@ -24,6 +24,12 @@ class ProductoRepository(BaseRepository[Producto]):
     def __init__(self, session: Session) -> None:
         super().__init__(session, Producto)
 
+    def get_by_id(self, producto_id: int) -> Producto | None:
+        """Busca por ID sin filtrar por eliminado_en (usado para reactivar)."""
+        return self.session.exec(
+            _base_select().where(Producto.id == producto_id)
+        ).first()
+
     def get_activo(self, producto_id: int) -> Producto | None:
         return self.session.exec(
             _base_select().where(
@@ -36,6 +42,21 @@ class ProductoRepository(BaseRepository[Producto]):
         return (
             self.session.exec(
                 _base_select().where(Producto.eliminado_en == None)  # noqa: E711
+            )
+            .unique()
+            .all()
+        )
+
+    def get_all_incluir_eliminados(
+        self, skip: int = 0, limit: int = 200
+    ) -> Sequence[Producto]:
+        """Todos los productos (activos + eliminados) para el panel admin."""
+        return (
+            self.session.exec(
+                _base_select()
+                .order_by(Producto.eliminado_en, Producto.nombre)
+                .offset(skip)
+                .limit(limit)
             )
             .unique()
             .all()

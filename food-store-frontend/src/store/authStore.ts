@@ -1,19 +1,21 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-//  Definimos cómo luce un Rol individual
-export interface Role {
-  id: number;
+// Estructura de rol tal como la devuelve el backend (UsuarioPublic > RolPublic)
+export interface RolPublic {
+  codigo: string;  // 'ADMIN' | 'GESTOR_STOCK' | 'GESTOR_PEDIDOS' | 'CLIENTE'
   nombre: string;
+  descripcion?: string;
 }
 
-// El usuario ahora tiene un arreglo de roles
 export interface User {
   id: number;
   email: string;
   nombre: string;
+  apellido?: string;
   cel?: string;
-  roles?: any[];
+  activo?: boolean;
+  roles?: RolPublic[];
 }
 
 interface AuthState {

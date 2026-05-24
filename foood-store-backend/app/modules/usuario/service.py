@@ -68,8 +68,18 @@ class UsuarioService:
                 subject=str(usuario.id),
                 roles=roles_del_usuario,
             )
-            
-            # Retornamos el objeto con el token Y el usuario
+
+            # Inyectamos el JWT en una cookie HttpOnly (no accesible desde JS)
+            response.set_cookie(
+                key="access_token",
+                value=f"Bearer {token}",
+                httponly=True,
+                max_age=1800,       # 30 min — igual que ACCESS_TOKEN_EXPIRE_MINUTES
+                samesite="lax",
+                secure=False,       # True en producción con HTTPS
+            )
+
+            # Devolvemos también el token en el body para compatibilidad con Swagger
             return {
                 "access_token": token,
                 "token_type": "bearer",

@@ -32,18 +32,21 @@ def listar_productos(
     activo: Optional[bool] = None,
     q: Optional[str] = None,
     skip: int = 0,
-    limit: int = 20,
+    limit: int = 200,
+    incluir_eliminados: bool = False,
     svc: ProductoService = Depends(get_service),
 ):
     """
-    Listado público con filtros opcionales:
-    - `categoria_id`: filtra por categoría.
-    - `activo`: true/false para filtrar por estado activo.
-    - `q`: búsqueda por nombre o descripción.
-    - `skip` / `limit`: paginación.
+    Listado con filtros opcionales.
+    - `incluir_eliminados=true`: devuelve activos + eliminados (para panel admin).
     """
     return svc.listar_productos(
-        categoria_id=categoria_id, activo=activo, q=q, skip=skip, limit=limit
+        categoria_id=categoria_id,
+        activo=activo,
+        q=q,
+        skip=skip,
+        limit=limit,
+        incluir_eliminados=incluir_eliminados,
     )
 
 
@@ -74,6 +77,15 @@ def toggle_disponibilidad(
 ):
     """Activa o desactiva el estado activo del producto. ADMIN o GESTOR_STOCK."""
     return svc.toggle_disponibilidad(producto_id, activo)
+
+
+@router.patch("/{producto_id}/reactivar", response_model=ProductoPublic,
+              dependencies=[_solo_admin])
+def reactivar_producto(
+    producto_id: int, svc: ProductoService = Depends(get_service)
+):
+    """Restaura un producto dado de baja (limpia eliminado_en). Solo ADMIN."""
+    return svc.reactivar_producto(producto_id)
 
 
 @router.delete("/{producto_id}", status_code=status.HTTP_204_NO_CONTENT,

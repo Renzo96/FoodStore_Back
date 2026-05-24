@@ -1,30 +1,57 @@
 import api from '../config/axios';
 
-// 1. Molde del Pedido que devuelve el backend
-export interface Pedido {
-  id: number;
-  estado: string;
-  total: number;
-  fecha_creacion: string;
+// Detalle individual dentro de un pedido
+export interface DetallePedidoPublic {
+  producto_id:     number;
+  cantidad:        number;
+  nombre_snapshot: string;
+  precio_snapshot: number;
+  subtotal_snap:   number;
 }
 
-// 👇 2. NUEVO: Molde para los items que enviamos al comprar
+// Molde completo del pedido (fiel al backend: PedidoPublic)
+export interface PedidoPublic {
+  id:                number;
+  usuario_id:        number;
+  direccion_id?:     number | null;
+  estado_codigo:     string;  // 'PENDIENTE' | 'CONFIRMADO' | 'EN_PREPARACION' | ...
+  forma_pago_codigo: string;
+  subtotal:          number;
+  descuento:         number;
+  costo_envio:       number;
+  total:             number;
+  notas?:            string | null;
+  creado_en:         string;
+  actualizado_en?:   string | null;
+  detalles:          DetallePedidoPublic[];
+}
+
+// Alias para compatibilidad con componentes existentes
+export type Pedido = PedidoPublic;
+
+// Molde para los items que enviamos al comprar
 export interface PedidoItemPayload {
   producto_id: number;
   cantidad: number;
 }
 
-// 👇 3. NUEVO: Molde exacto del payload de creación
+// Molde exacto del payload de creación
 export interface CrearPedidoPayload {
   direccion_id: number;
   items: PedidoItemPayload[];
 }
 
 export const PedidoService = {
-  // Trae todos los pedidos
-  listarTodos: async (): Promise<Pedido[]> => {
+  // Admin/Gestor: trae todos. Cliente: solo los suyos. El backend filtra por rol.
+  listarTodos: async (): Promise<PedidoPublic[]> => {
     const { data } = await api.get('/pedidos/');
-    return data.data || data; 
+    return data.data || data;
+  },
+
+  // Alias semántico para la pantalla del cliente (llama al mismo endpoint)
+  listarMisPedidos: async (): Promise<PedidoPublic[]> => {
+    const { data } = await api.get('/pedidos/');
+    return data.data || data;
   },
 
   // Cambia el estado del pedido

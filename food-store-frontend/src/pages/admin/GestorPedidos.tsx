@@ -24,8 +24,10 @@ export default function GestorPedidos() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 👇 1. PROTECCIÓN DE RUTA (RBAC) 👇
-  const canManageOrders = user?.rol === 'ADMIN' || user?.rol === 'GESTOR_PEDIDOS';
+  // RBAC: verifica que al menos un rol del usuario tenga permiso de gestión
+  const canManageOrders = user?.roles?.some(
+    (r) => r.codigo === 'ADMIN' || r.codigo === 'GESTOR_PEDIDOS'
+  ) ?? false;
 
   useEffect(() => {
     if (canManageOrders) {

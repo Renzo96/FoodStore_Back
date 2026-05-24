@@ -68,17 +68,21 @@ class ProductoService:
         activo: Optional[bool] = None,
         q: Optional[str] = None,
         skip: int = 0,
-        limit: int = 20,
+        limit: int = 200,
+        incluir_eliminados: bool = False,
     ) -> list[ProductoPublic]:
         uow = ProductoUnitOfWork(self._session)
         with uow:
-            productos = uow.productos.get_filtrado(
-                categoria_id=categoria_id,
-                activo=activo,
-                q=q,
-                skip=skip,
-                limit=limit,
-            )
+            if incluir_eliminados:
+                productos = uow.productos.get_all_incluir_eliminados(skip, limit)
+            else:
+                productos = uow.productos.get_filtrado(
+                    categoria_id=categoria_id,
+                    activo=activo,
+                    q=q,
+                    skip=skip,
+                    limit=limit,
+                )
         return [ProductoPublic.model_validate(p) for p in productos]
 
     # ------------------------------------------------------------------
@@ -189,3 +193,22 @@ class ProductoService:
                 )
             producto.eliminado_en = datetime.now(timezone.utc)
             self._session.add(producto)
+
+    # ------------------------------------------------------------------
+    def reactivar_producto(self, producto_id: int) -> ProductoPublic:
+        """Restaura un producto dado de baja (limpia eliminado_en)."""
+        uow = ProductoUnitOfWork(self._session)
+        with uow:
+            producto = uow.productos.get_by_id(producto_id)
+            if not producto:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Producto no encontrado",
+                )
+            producto.eliminado_en = None
+            producto.actualizado_en = datetime.now(timezone.utc)
+            self._session.add(producto)
+            self._session.flush()
+            result = uow.productos.get_by_id(producto.id)
+        return ProductoPublic.model_validate(result)
+

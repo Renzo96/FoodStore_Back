@@ -10,6 +10,26 @@ class CategoriaRepository(BaseRepository[Categoria]):
     def __init__(self, session: Session) -> None:
         super().__init__(session, Categoria)
 
+    def get_by_id(self, categoria_id: int) -> Categoria | None:
+        """Busca por ID sin filtrar por eliminado_en."""
+        return self.session.exec(
+            select(Categoria)
+            .options(selectinload(Categoria.subcategorias))
+            .where(Categoria.id == categoria_id)
+        ).first()
+
+    def get_all_incluir_eliminados(
+        self, skip: int = 0, limit: int = 200
+    ) -> Sequence[Categoria]:
+        """Todas las categorías (activas + eliminadas) para el panel admin."""
+        return self.session.exec(
+            select(Categoria)
+            .options(selectinload(Categoria.subcategorias))
+            .order_by(Categoria.parent_id, Categoria.nombre)
+            .offset(skip)
+            .limit(limit)
+        ).all()
+
     def get_eliminado(self, categoria_id: int) -> Categoria | None:
         """Busca una categoría con soft-delete aplicado (para reactivación)."""
         return self.session.exec(

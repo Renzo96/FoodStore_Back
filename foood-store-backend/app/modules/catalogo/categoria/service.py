@@ -33,11 +33,14 @@ class CategoriaService:
         parent_id: Optional[int] = None,
         solo_raiz: bool = False,
         skip: int = 0,
-        limit: int = 20,
+        limit: int = 200,
+        incluir_eliminados: bool = False,
     ) -> list[CategoriaPublic]:
         uow = CategoriaUnitOfWork(self._session)
         with uow:
-            if parent_id is not None:
+            if incluir_eliminados:
+                categorias = uow.categorias.get_all_incluir_eliminados(skip, limit)
+            elif parent_id is not None:
                 categorias = uow.categorias.get_by_parent_id(parent_id, skip, limit)
             elif solo_raiz:
                 categorias = uow.categorias.get_all_raiz(skip, limit)

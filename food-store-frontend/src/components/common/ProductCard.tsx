@@ -19,7 +19,9 @@ export default function ProductCard({ producto }: ProductCardProps) {
         <img 
           src={producto.imagen_url || imagenPorDefecto} 
           alt={producto.nombre}
+          referrerPolicy="no-referrer"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          onError={e => { (e.currentTarget as HTMLImageElement).src = imagenPorDefecto; }}
         />
         
         {/* Overlay si no hay stock */}

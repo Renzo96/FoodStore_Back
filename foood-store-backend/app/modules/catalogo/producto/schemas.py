@@ -73,6 +73,7 @@ class ProductoPublic(ProductoBase):
     precio: float
     creado_en:      datetime
     actualizado_en: datetime
+    eliminado_en:   Optional[datetime] = None
     categorias: List[CategoriaPublic] = []
     receta_detallada: List[RecetaItemPublic] = []
 
@@ -106,6 +107,7 @@ class ProductoPublic(ProductoBase):
                 "precio": data.precio,
                 "creado_en": data.creado_en,
                 "actualizado_en": data.actualizado_en,
+                "eliminado_en": data.eliminado_en,
                 "categorias": getattr(data, "categorias", []),
                 "receta_detallada": receta_mapeada,
             }

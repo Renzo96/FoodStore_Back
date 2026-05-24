@@ -35,11 +35,12 @@ def crear_ingrediente(
 @router.get("/ingredientes", response_model=List[IngredientePublic])
 def listar_ingredientes(
     offset: int = 0,
-    limit: int = 50,
+    limit: int = 200,
+    incluir_eliminados: bool = False,
     svc: IngredienteService = Depends(get_service),
 ):
-    """Lista la materia prima disponible en cocina."""
-    return svc.listar_ingredientes(offset, limit)
+    """Lista la materia prima. Con incluir_eliminados=true devuelve también los dados de baja."""
+    return svc.listar_ingredientes(offset, limit, incluir_eliminados)
 
 
 @router.get("/ingredientes/{ingrediente_id}", response_model=IngredientePublic)
@@ -56,6 +57,14 @@ def actualizar_ingrediente(
     svc: IngredienteService = Depends(get_service),
 ):
     return svc.actualizar_ingrediente(ingrediente_id, data)
+
+
+@router.patch("/ingredientes/{ingrediente_id}/reactivar", response_model=IngredientePublic)
+def reactivar_ingrediente(
+    ingrediente_id: int, svc: IngredienteService = Depends(get_service)
+):
+    """Restaura un ingrediente dado de baja (limpia eliminado_en)."""
+    return svc.reactivar_ingrediente(ingrediente_id)
 
 
 @router.delete(

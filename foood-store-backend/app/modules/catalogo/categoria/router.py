@@ -28,16 +28,24 @@ def listar_categorias(
     parent_id: Optional[int] = None,
     solo_raiz: bool = True,
     skip: int = 0,
-    limit: int = 20,
+    limit: int = 200,
+    incluir_eliminados: bool = False,
     svc: CategoriaService = Depends(get_service),
 ):
     """
-    Listado público de categorías.
+    Listado de categorías.
     - Sin parámetros: categorías raíz con `solo_raiz=true`.
     - `parent_id=X`: hijos directos de la categoría X.
     - `solo_raiz=false`: todas las categorías activas.
+    - `incluir_eliminados=true`: devuelve activas + eliminadas (para panel admin).
     """
-    return svc.listar_categorias(parent_id=parent_id, solo_raiz=solo_raiz, skip=skip, limit=limit)
+    return svc.listar_categorias(
+        parent_id=parent_id,
+        solo_raiz=solo_raiz,
+        skip=skip,
+        limit=limit,
+        incluir_eliminados=incluir_eliminados,
+    )
 
 
 @router.get("/{categoria_id}", response_model=CategoriaPublic)
