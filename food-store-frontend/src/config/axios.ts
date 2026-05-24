@@ -30,9 +30,12 @@ api.interceptors.request.use(
       token = useAuthStore.getState().token;
     }
     
-    if (token && config.headers) {
-      // Si hay token, se lo inyectamos al header de Authorization
+   if (token && config.headers) {
+      // Le avisamos a la consola para auditar
+      console.log("🔑 [AXIOS] Enviando petición a:", config.url, "con token:", token.substring(0, 15) + "...");
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      console.warn("⚠️ [AXIOS] CUIDADO: Haciendo petición SIN TOKEN a:", config.url);
     }
     return config;
   },
@@ -42,18 +45,26 @@ api.interceptors.request.use(
 );
 
 // INTERCEPTOR DE RESPUESTAS (Maneja si el token expiró )
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // Si FastAPI nos devuelve un 401 (No Autorizado), el token expiró o es inválido
-    if (error.response?.status === 401) {
-      // Evitamos un bucle infinito si ya estamos en login
-      if (window.location.pathname !== '/login') {
-        useAuthStore.getState().logout();
-        window.location.href = '/login'; // Pateamos al usuario al login
-      }
+api.interceptors.request.use(
+  (config) => {
+    // Si la URL es login, no hacemos nada
+    if (config.url?.includes('/login')) return config;
+
+    const authStore = localStorage.getItem('food-store-auth');
+    let token = null;
+
+    if (authStore) {
+      const parsed = JSON.parse(authStore);
+      token = parsed.state?.token;
     }
-    return Promise.reject(error);
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+     // console.log("✅ Token inyectado correctamente");
+    } else {
+      //console.warn("❌ Petición sin token en:", config.url);
+    }
+    return config;
   }
 );
 

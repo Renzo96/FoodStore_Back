@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react';
-import { Edit, Trash2 } from 'lucide-react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Plus, Edit, Search, ChevronLeft, ChevronRight, CornerDownRight, ToggleLeft, ToggleRight, Layers, Trash2, RotateCcw } from 'lucide-react';
 import { CatalogoService } from '../../services/catalogo.service';
 import CategoriaModal from '../../components/admin/CategoriaModal';
 
 export default function CategoriasAdmin() {
   const [categorias, setCategorias] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
+  const [filtroNombre, setFiltroNombre] = useState('');
+  const [paginaActual, setPaginaActual] = useState(1);
+  const itemsPorPagina = 10;
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [categoriaEditando, setCategoriaEditando] = useState<any | null>(null);
 
@@ -14,12 +17,16 @@ export default function CategoriasAdmin() {
     cargarCategorias();
   }, []);
 
-  const cargarCategorias = () => {
+  const cargarCategorias = async () => {
     setLoading(true);
-    CatalogoService.getCategorias()
-      .then((data) => setCategorias(data))
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
+    try {
+      const data = await CatalogoService.getCategorias();
+      setCategorias(data);
+    } catch (error) {
+      console.error("Error cargando categorías:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGuardar = async (payload: any) => {
@@ -29,74 +36,116 @@ export default function CategoriasAdmin() {
       } else {
         await CatalogoService.crearCategoria(payload);
       }
-      setIsModalOpen(false);
-      cargarCategorias();
+      setIsModalOpen(false); // Cierra el modal
+      cargarCategorias();    // Recarga la lista
     } catch (error: any) {
       alert(`Error: ${error.response?.data?.detail || 'No se pudo guardar'}`);
     }
   };
-
-  const abrirModalEditar = (categoria: any) => {
-    setCategoriaEditando(categoria);
-    setIsModalOpen(true);
+  
+  // --- INTERRUPTOR VISIBILIDAD (ACTIVO) ---
+  const handleToggleVisibilidad = async (cat: any) => {
+    try {
+      await CatalogoService.actualizarCategoria(cat.id, { activo: !cat.activo });
+      cargarCategorias();
+    } catch (error) {
+      alert("Error al cambiar la visibilidad.");
+    }
   };
 
-  const abrirModalNuevo = () => {
-    setCategoriaEditando(null);
-    setIsModalOpen(true);
+  // --- SOFT DELETE ---
+  const handleSoftDelete = async (id: number) => {
+    if (window.confirm('¿Eliminar lógicamente esta categoría?')) {
+      try {
+        // Asumiendo que el backend maneja el soft-delete vía una ruta específica o patch
+        await CatalogoService.actualizarCategoria(id, { eliminado_en: new Date().toISOString() });
+        cargarCategorias();
+      } catch (error) {
+        alert("Error al eliminar.");
+      }
+    }
   };
+
+  // --- REACTIVAR SOFT DELETE ---
+  const handleReactivar = async (id: number) => {
+    try {
+      await CatalogoService.actualizarCategoria(id, { eliminado_en: null });
+      cargarCategorias();
+    } catch (error) {
+      alert("Error al reactivar.");
+    }
+  };
+
+  const formatearFecha = (fecha: string | null) => fecha ? new Date(fecha).toLocaleDateString() : '-';
+
+  const categoriasFiltradas = useMemo(() => {
+    return categorias.filter(c => c.nombre.toLowerCase().includes(filtroNombre.toLowerCase()));
+  }, [categorias, filtroNombre]);
+
+  const categoriasPaginadas = categoriasFiltradas.slice((paginaActual - 1) * itemsPorPagina, paginaActual * itemsPorPagina);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-black text-slate-800">Categorías del Menú</h2>
-        <button onClick={abrirModalNuevo} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl font-bold transition-colors">
-          + Nueva Categoría
+    <div className="p-6">
+      <div className="flex justify-between mb-6">
+        <h1 className="text-2xl font-bold">Categorías</h1>
+        <button onClick={() => { setCategoriaEditando(null); setIsModalOpen(true); }} className="bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+          <Plus size={20}/> Nueva
         </button>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-50 text-gray-500 text-sm">
-              <th className="p-4 font-semibold">ID</th>
-              <th className="p-4 font-semibold">Nombre</th>
-              <th className="p-4 font-semibold">Padre</th>
-              <th className="p-4 font-semibold">Descripción</th>
-              <th className="p-4 font-semibold text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {loading ? (
-              <tr><td colSpan={5} className="p-8 text-center text-gray-500">Cargando catálogo...</td></tr>
-            ) : categorias.map((cat) => (
-              <tr key={cat.id} className="hover:bg-gray-50 transition">
-                <td className="p-4 text-gray-500">#{cat.id}</td>
-                <td className="p-4 font-bold text-gray-900">{cat.nombre}</td>
-                <td className="p-4 text-gray-500 text-sm">{cat.parent_id ? `Subcategoría de #${cat.parent_id}` : 'Categoría Principal'}</td>
-                <td className="p-4 text-gray-500 text-sm">{cat.descripcion || '-'}</td>
-                <td className="p-4 text-right space-x-2">
-                  <button onClick={() => abrirModalEditar(cat)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg">
-                    <Edit className="h-5 w-5" />
-                  </button>
-                  <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
-                    <Trash2 className="h-5 w-5" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <input 
+        className="mb-4 p-2 border rounded w-full max-w-sm"
+        placeholder="Buscar por nombre..."
+        onChange={(e) => setFiltroNombre(e.target.value)}
+      />
 
-      {isModalOpen && (
-        <CategoriaModal
-          categoria={categoriaEditando}
-          onClose={() => setIsModalOpen(false)}
-          onSave={handleGuardar}
-          categoriasDisponibles={categorias} 
-        />
-      )}
+      <table className="w-full bg-white shadow rounded-lg overflow-hidden">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="p-4">Nombre</th>
+            <th className="p-4">Estado (Visible)</th>
+            <th className="p-4">Modificar</th>
+            <th className="p-4">Creado</th>
+            <th className="p-4">Modificado</th>
+            <th className="p-4">Eliminado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {categoriasPaginadas.map(cat => (
+            <tr key={cat.id} className="border-t">
+              <td className="p-4">
+                <div className="font-bold">{cat.nombre}</div>
+                {cat.subcategorias?.length > 0 && <div className="text-xs text-blue-500">Tiene {cat.subcategorias.length} sub-categorías</div>}
+              </td>
+              <td className="p-4 text-center">
+                <button onClick={() => handleToggleVisibilidad(cat)}>
+                  {cat.activo ? <ToggleRight className="text-green-500" size={32}/> : <ToggleLeft className="text-gray-400" size={32}/>}
+                </button>
+              </td>
+              <td className="p-4 text-center">
+                <button onClick={() => { setCategoriaEditando(cat); setIsModalOpen(true); }} className="text-blue-600">
+                  <Edit size={20}/>
+                </button>
+              </td>
+              <td className="p-4 text-sm">{formatearFecha(cat.creado_en)}</td>
+              <td className="p-4 text-sm">{formatearFecha(cat.actualizado_en)}</td>
+              <td className="p-4 text-center">
+                {cat.eliminado_en ? (
+                  <button onClick={() => handleReactivar(cat.id)} className="text-green-600 flex items-center gap-1">
+                    <RotateCcw size={16}/> Reactivar
+                  </button>
+                ) : (
+                  <button onClick={() => handleSoftDelete(cat.id)} className="text-red-500">
+                    <Trash2 size={20}/>
+                  </button>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {isModalOpen && <CategoriaModal categoria={categoriaEditando} categoriasDisponibles={categorias} onClose={() => setIsModalOpen(false)} onSave={handleGuardar} />}
     </div>
   );
 }

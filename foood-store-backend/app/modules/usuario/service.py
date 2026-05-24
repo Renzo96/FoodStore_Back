@@ -51,7 +51,7 @@ class UsuarioService:
     # ====================================================================
     # 2. AUTENTICACIÓN STATELESS CON COOKIES HTTPONLY
     # ====================================================================
-    def login(self, email: str, password_plana: str, response: Response) -> UsuarioPublic:
+    def login(self, email: str, password_plana: str, response: Response) -> dict: # 👈 Cambiamos retorno a dict
         with UsuarioUnitOfWork(self._session) as uow:
             usuario = uow.usuarios.get_by_email(email)
             if not usuario or not verify_password(password_plana, usuario.password):
@@ -60,33 +60,21 @@ class UsuarioService:
             if not usuario.activo:
                 raise HTTPException(status_code=400, detail="Usuario inactivo")
 
-            # Extraemos roles y permisos para incluirlos en el JWT
+            # Extraemos roles para el JWT
             roles_del_usuario = [enlace.rol_codigo for enlace in usuario.roles_enlaces]
-            permisos_del_usuario = list({
-                permiso.nombre
-                for enlace in usuario.roles_enlaces
-                if enlace.rol
-                for permiso in enlace.rol.permisos
-            })
             
+            # Creamos el Token
             token = create_access_token(
                 subject=str(usuario.id),
                 roles=roles_del_usuario,
-                permisos=permisos_del_usuario,
             )
             
-            
-            response.set_cookie(
-                key="access_token",
-                value=f"Bearer {token}",
-                httponly=True,  # JavaScript no puede leerla (Mitiga XSS)
-                secure=False,   # Ponlo en True cuando subas a producción con HTTPS
-                samesite="lax", # Mitiga CSRF
-                max_age=1800    # 30 Minutos de vida
-            )
-            
-            # Retornamos el objeto público sin token en el JSON
-            return UsuarioPublic.model_validate(usuario)
+            # Retornamos el objeto con el token Y el usuario
+            return {
+                "access_token": token,
+                "token_type": "bearer",
+                "usuario": UsuarioPublic.model_validate(usuario)
+}
 
     def logout(self, response: Response) -> dict:
         #  DESTRUCCIÓN INMEDIATA DE LA SESIÓN 

@@ -25,12 +25,15 @@ def get_usuario_service(session: Session = Depends(get_session)) -> UsuarioServi
 def registrar(data: UsuarioCreate, svc: UsuarioService = Depends(get_usuario_service)):
     return svc.registrar_usuario(data)
 
-@router.post("/login", response_model=UsuarioPublic)
+# 1. Cambiamos el response_model a 'dict' o lo quitamos para que sea flexible
+@router.post("/login") 
 def login(
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     svc: UsuarioService = Depends(get_usuario_service)
 ):
+    # Asegúrate de que este método en tu service.py devuelva:
+    # { "access_token": "...", "token_type": "bearer", "email": "...", "nombre": "...", ... }
     return svc.login(form_data.username, form_data.password, response)
 
 @router.post("/logout", status_code=status.HTTP_200_OK)

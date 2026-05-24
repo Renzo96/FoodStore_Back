@@ -18,31 +18,38 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // 1. Llamamos al backend. La respuesta AHORA es el usuario directamente.
-      const usuario = await AuthService.login(email, password);
+      // 1. Llamamos al backend. 
+      // El backend debería devolvernos el token y los datos del usuario
+      const respuesta = await AuthService.login(email, password);
+      //console.log("🔥 RESPUESTA BRUTA DEL BACKEND:", respuesta);
 
-      // 2. Guardamos en Zustand. 
-      // Como ya no hay token manual, le pasamos un string vacío o null al primer parámetro.
-      // (El navegador se encarga de la Cookie automáticamente).
-      setLogin("", usuario); 
+      // Extraemos el token (FastAPI suele mandarlo como access_token)
+      // Extraemos el usuario (dependiendo de cómo armaste tu JSON en el backend)
+      const tokenJWT = respuesta.access_token || respuesta.token;
+      const datosUsuario = respuesta.usuario || respuesta;
 
-      // 3. Redirigimos según el rol.
-      // Ahora revisamos si dentro de su lista de roles está el "ADMIN"
-      // Nota: Si tus roles vienen como objetos anidados en lugar de strings, 
-      // podrías necesitar: usuario.roles?.some(r => r.rol_codigo === 'ADMIN')
-      const esAdmin = usuario.roles?.includes('ADMIN') || 
-                      usuario.roles?.some((r: any) => r.rol_codigo === 'ADMIN' || r === 'ADMIN');
+      // 🚨 Validamos que el token realmente haya llegado
+      if (!tokenJWT) {
+        throw new Error("El backend no devolvió un token de seguridad.");
+      }
+
+      // 2. Guardamos la LLAVE REAL y el usuario en Zustand
+      setLogin(tokenJWT, datosUsuario); 
+
+      // 3. Redirigimos según el rol
+      const esAdmin = datosUsuario.roles?.includes('ADMIN') || 
+                      datosUsuario.roles?.some((r: any) => r.rol_codigo === 'ADMIN' || r === 'ADMIN');
 
       if (esAdmin) {
-        navigate('/'); // Redirige al panel de administrador 
+        navigate('/admin'); // 👈 Ojo: asumo que tu panel es /admin, no /
       } else {
         navigate('/'); // Redirige a la tienda para el cliente normal
       }
       
     } catch (err: any) {
       console.error(err);
-      if (err.response?.status === 401 || err.response?.status === 400) {
-        setError('Credenciales incorrectas. Intenta de nuevo.');
+      if (err.response?.status === 401 || err.response?.status === 400 || err.message.includes('token')) {
+        setError('Credenciales incorrectas o falta de token. Intenta de nuevo.');
       } else {
         setError('Ocurrió un error al intentar iniciar sesión.');
       }
@@ -104,14 +111,12 @@ export default function Login() {
           </button>
         </form>
 
-        {/* REGISTRO */}
         <div className="mt-8 text-center text-sm text-gray-600">
           ¿No tienes una cuenta?{' '}
           <Link to="/registro" className="font-bold text-orange-600 hover:text-orange-500 transition-colors">
             Regístrate aquí
           </Link>
         </div>
-
       </div>
     </div>
   );
