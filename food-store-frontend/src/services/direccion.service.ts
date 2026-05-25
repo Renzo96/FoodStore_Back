@@ -1,44 +1,55 @@
-import axios from 'axios';
-import { useAuthStore } from '../store/authStore';
+import api from '../config/axios';
 
+// ── Interfaces alineadas con el backend ────────────────────────────────────
 export interface Direccion {
-  id: number;
-  calle: string;
-  numero: string;
-  piso?: string;         // Opcional
-  departamento?: string; // Opcional
-  localidad: string;
-  referencias?: string;  // Opcional
-  es_principal: boolean;
+  id:             number;
+  usuario_id:     number;
+  alias?:         string | null;
+  calle:          string;
+  numero:         string;
+  piso?:          string | null;
+  departamento?:  string | null;
+  ciudad:         string;
+  codigo_postal:  string;
+  predeterminada: boolean;
+  creado_en:      string;
+  actualizado_en: string;
+  eliminado_en?:  string | null;
 }
 
-// 2. Interfaz para CREAR (Sin ID, porque lo genera el backend)
 export interface CrearDireccionPayload {
-  calle: string;
-  numero: string;
-  piso?: string;
-  departamento?: string;
-  localidad: string;
-  referencias?: string;
-  es_principal: boolean;
+  alias?:         string;
+  calle:          string;
+  numero:         string;
+  piso?:          string;
+  departamento?:  string;
+  ciudad:         string;
+  codigo_postal:  string;
+  predeterminada: boolean;
 }
-
-const API_URL = 'http://127.0.0.1:8000/api/direcciones';
-
-// Helper para sacar el token de Zustand y armar los headers
-const getAuthHeaders = () => {
-  const token = useAuthStore.getState().token;
-  return { headers: { Authorization: `Bearer ${token}` } };
-};
 
 export const DireccionService = {
-  listarMisDirecciones: async () => {
-    const response = await axios.get(`${API_URL}/`, getAuthHeaders());
-    return response.data;
+  listar: async (): Promise<Direccion[]> => {
+    const { data } = await api.get('/direcciones');
+    return data;
   },
 
-  crear: async (datos: CrearDireccionPayload) => {
-    const response = await axios.post(`${API_URL}/`, datos, getAuthHeaders());
-    return response.data;
-  }
+  crear: async (payload: CrearDireccionPayload): Promise<Direccion> => {
+    const { data } = await api.post('/direcciones', payload);
+    return data;
+  },
+
+  actualizar: async (id: number, payload: Partial<CrearDireccionPayload>): Promise<Direccion> => {
+    const { data } = await api.patch(`/direcciones/${id}`, payload);
+    return data;
+  },
+
+  marcarPredeterminada: async (id: number): Promise<Direccion> => {
+    const { data } = await api.patch(`/direcciones/${id}/principal`);
+    return data;
+  },
+
+  eliminar: async (id: number): Promise<void> => {
+    await api.delete(`/direcciones/${id}`);
+  },
 };

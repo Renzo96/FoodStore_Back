@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useState } from 'react';
 import { User, LogIn, LogOut, Settings, MapPin, ShoppingCart } from 'lucide-react'; 
@@ -7,8 +7,11 @@ import CartDrawer from '../layout/CartDrawer';
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuthStore();
+  const navigate = useNavigate();
   const totalItems = useCartStore(state => state.getTotalItems());
   const [isCartOpen, setIsCartOpen] = useState(false);
+
+  const handleLogout = () => { logout(); navigate('/'); };
 
 
   const canSeeAdminPanel = user?.roles?.some((rol: any) => 
@@ -33,6 +36,15 @@ const Navbar = () => {
             >
               <MapPin className="w-5 h-5" />
               <span className="hidden md:block">Mis Direcciones</span>
+            </Link>
+
+            {/* Mi Perfil */}
+            <Link
+              to="/mi-perfil"
+              className="flex items-center gap-1.5 text-slate-300 hover:text-orange-400 transition-colors text-sm font-medium"
+            >
+              <User className="w-5 h-5" />
+              <span className="hidden md:block">Mi Perfil</span>
             </Link>
 
             {/* Carrito  */}
@@ -76,7 +88,7 @@ const Navbar = () => {
               <User className="w-5 h-5 text-slate-300" />
               
               <button 
-                onClick={logout}
+                onClick={handleLogout}
                 className="ml-1 p-1 text-slate-400 hover:text-red-400 transition-colors"
                 title="Cerrar Sesión"
               >

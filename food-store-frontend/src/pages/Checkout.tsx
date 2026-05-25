@@ -29,10 +29,10 @@ export default function Checkout() {
 
     const cargarDatos = async () => {
       try {
-        const data = await DireccionService.listarMisDirecciones();
+        const data = await DireccionService.listar();
         setDirecciones(data);
-        // Seleccionamos la principal por defecto
-        const principal = data.find((d: Direccion) => d.es_principal);
+        // Seleccionamos la predeterminada por defecto
+        const principal = data.find((d: Direccion) => d.predeterminada);
         if (principal) setDireccionId(principal.id);
         else if (data.length > 0) setDireccionId(data[0].id);
       } catch (error) {
@@ -109,7 +109,7 @@ export default function Checkout() {
             {direcciones.length === 0 ? (
               <div className="text-center py-6 border-2 border-dashed border-slate-200 rounded-2xl">
                 <p className="text-slate-500 mb-4">No tienes direcciones registradas</p>
-                <Link to="/perfil" className="inline-flex items-center gap-2 bg-slate-900 text-white px-6 py-2 rounded-xl font-bold">
+                <Link to="/mis-direcciones" className="inline-flex items-center gap-2 bg-slate-900 text-white px-6 py-2 rounded-xl font-bold">
                   <Plus className="w-4 h-4" /> Agregar Dirección
                 </Link>
               </div>
@@ -131,7 +131,7 @@ export default function Checkout() {
                     />
                     <div className="flex-1">
                       <p className="font-bold text-slate-800">{dir.calle} {dir.numero}</p>
-                      <p className="text-sm text-slate-500">{dir.localidad}</p>
+                      <p className="text-sm text-slate-500">{dir.ciudad} · CP {dir.codigo_postal}</p>
                     </div>
                     {direccionId === dir.id && (
                       <div className="bg-orange-500 rounded-full p-1 text-white">

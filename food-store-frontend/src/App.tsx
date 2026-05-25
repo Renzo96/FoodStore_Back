@@ -14,6 +14,7 @@ import GestorPedidos from './pages/admin/GestorPedidos';
 import Checkout from './pages/Checkout';
 import PedidoExitoso from './pages/PedidoExitoso';
 import MisPedidos from './pages/client/MisPedidos';
+import MiPerfil   from './pages/client/MiPerfil';
 import { ProtectedRoute } from './app/router/ProtectedRoute';
 
 const ADMIN_ROLES = ['ADMIN', 'GESTOR_STOCK', 'GESTOR_PEDIDOS'];
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="carrito" element={<div className="p-10 text-center text-2xl">Carrito en construcción 🛒</div>} />
           <Route path="/registro" element={<Register />} />
           <Route path="/mis-direcciones" element={<MisDirecciones />} />
+          <Route path="/mi-perfil"       element={<MiPerfil />} />
           <Route path="/mis-pedidos" element={<MisPedidos />} />
           <Route path="/checkout" element={<Checkout />} />
           {/* Ruta dinámica: :pedidoId es el parámetro que lee useParams */}

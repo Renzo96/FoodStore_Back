@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 
 
 export interface ProductoCart {
@@ -29,11 +28,11 @@ interface CartState {
   // Getters computados
   getTotalItems: () => number;
   getTotalPrice: () => number;
+  setItems: (items: CartItem[]) => void;
 }
 
 export const useCartStore = create<CartState>()(
-  persist(
-    (set, get) => ({
+  (set, get) => ({
       items: [],
 
       // 1. Agregar un producto (si ya existe, suma la cantidad)
@@ -78,9 +77,8 @@ export const useCartStore = create<CartState>()(
       // 5. Cálculos automáticos para el Navbar y el Total a Pagar
       getTotalItems: () => get().items.reduce((total, item) => total + item.cantidad, 0),
       getTotalPrice: () => get().items.reduce((total, item) => total + (item.producto.precio_base * item.cantidad), 0),
-    }),
-    {
-      name: 'food-store-cart', // Persistencia: sobrevive si el usuario recarga la página
-    }
-  )
+
+      // 6. Cargar items (usado al iniciar sesión para restaurar el carrito del usuario)
+      setItems: (items) => set({ items }),
+    })
 );
